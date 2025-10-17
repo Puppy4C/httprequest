@@ -2,9 +2,9 @@ name: Scheduled CLI Runner
 
 # Try to run the CLI script on a schedule. Note: GitHub Actions scheduled workflows are configured
 # with cron; some runners or accounts may throttle or restrict very frequent schedules. See notes below.
-concurrency:
-  group: httprequest-cli
-  cancel-in-progress: false
+# concurrency:
+#   group: httprequest-cli
+#   cancel-in-progress: false
 
 on:
   schedule:
