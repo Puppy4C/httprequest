@@ -20,6 +20,7 @@ def parse_args():
     p.add_argument('--target', required=True, help='目标 URL, 例如 http://host/api/search')
     p.add_argument('--concurrency', '-c', type=int, default=10)
     p.add_argument('--duration', '-d', type=int, default=10, help='持续时间(秒)')
+    p.add_argument('--rps', type=float, default=0, help='最大每秒请求数 (0 表示不限制)')
     return p.parse_args()
 
 
@@ -28,6 +29,10 @@ class Runner:
         self.target = target
         self.concurrency = concurrency
         self.duration = duration
+        self.rps = 0.0
+        # token bucket
+        self._tokens = 0.0
+        self._last_fill = time.time()
         self.fake = Faker(locale='zh_CN')
         self.total = 0
         self.success = 0
@@ -36,6 +41,26 @@ class Runner:
         self.last_response = None
 
     async def _one(self, client: httpx.AsyncClient):
+        # rate limit: token bucket shared
+        if self.rps and self.rps > 0:
+            # refill tokens
+            now = time.time()
+            elapsed = now - self._last_fill
+            self._tokens += elapsed * self.rps
+            if self._tokens > self.rps * 2:
+                # cap burst to 2s worth
+                self._tokens = self.rps * 2
+            self._last_fill = now
+            # if no token available, sleep a small time until at least one token
+            while self._tokens < 1.0:
+                await asyncio.sleep( max(0.01, 1.0 / max(self.rps, 1)) )
+                now = time.time()
+                elapsed = now - self._last_fill
+                self._tokens += elapsed * self.rps
+                self._last_fill = now
+            # consume a token
+            self._tokens -= 1.0
+
         name = self.fake.name()
         params = {'q': name}
         start = time.time()
@@ -65,6 +90,9 @@ class Runner:
 
     async def run(self):
         end_time = time.time() + self.duration
+        # set up rps tokens values
+        self._tokens = 0.0
+        self._last_fill = time.time()
         async with httpx.AsyncClient() as client:
             tasks = [asyncio.create_task(self.worker(client, end_time)) for _ in range(self.concurrency)]
 
@@ -129,6 +157,7 @@ class Runner:
 def main():
     args = parse_args()
     r = Runner(args.target, args.concurrency, args.duration)
+    r.rps = float(args.rps)
     start = time.time()
     try:
         asyncio.run(r.run())
