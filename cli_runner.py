@@ -11,6 +11,7 @@ import argparse
 import asyncio
 import time
 import sys
+import random
 from faker import Faker
 import httpx
 
@@ -60,28 +61,28 @@ class Runner:
                 self._last_fill = now
             # consume a token
             self._tokens -= 1.0
-
-        name = self.fake.name()
-        params = {'q': name}
-        start = time.time()
-        try:
-            resp = await client.get(self.target, params=params, timeout=10.0)
-            elapsed = time.time() - start
-            self.total += 1
-            self.total_time += elapsed
-            if 200 <= resp.status_code < 300:
-                self.success += 1
-            else:
-                self.failure += 1
+            name = self.fake.name()
+            # add loadMore param with random int between 1 and 5
+            params = {'q': name, 'loadMore': random.randint(1, 5)}
+            start = time.time()
             try:
-                body = resp.text
-            except Exception:
-                body = repr(resp.content)
-            self.last_response = (resp.status_code, body[:2000])
-        except Exception as e:
-            self.total += 1
-            self.failure += 1
-            self.last_response = (None, f'exception: {e}')
+                resp = await client.get(self.target, params=params, timeout=10.0)
+                elapsed = time.time() - start
+                self.total += 1
+                self.total_time += elapsed
+                if 200 <= resp.status_code < 300:
+                    self.success += 1
+                else:
+                    self.failure += 1
+                try:
+                    body = resp.text
+                except Exception:
+                    body = repr(resp.content)
+                self.last_response = (resp.status_code, body[:2000])
+            except Exception as e:
+                self.total += 1
+                self.failure += 1
+                self.last_response = (None, f'exception: {e}')
 
     async def worker(self, client: httpx.AsyncClient, end_time: float):
         while time.time() < end_time:
