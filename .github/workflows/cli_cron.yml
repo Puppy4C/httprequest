@@ -6,11 +6,11 @@ name: Scheduled CLI Runner
 #   group: httprequest-cli
 #   cancel-in-progress: false
 
-on:
-  schedule:
-    # runs every minute (may be subject to GitHub scheduling limits)
-    - cron: '*/5 * * * *'
-  workflow_dispatch: {}
+# on:
+#   schedule:
+#     # runs every minute (may be subject to GitHub scheduling limits)
+#     - cron: '*/5 * * * *'
+#   workflow_dispatch: {}
 
 jobs:
   run-cli:
