@@ -9,7 +9,7 @@ name: Scheduled CLI Runner
 on:
   schedule:
     # runs every minute (may be subject to GitHub scheduling limits)
-    - cron: '*/1 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -32,4 +32,4 @@ jobs:
       - name: Run CLI runner
         # the CLI runs for 120s; capture logs in workflow output
         run: |
-          python3 cli_runner.py --target http://107.174.71.236/api/search --concurrency 10 --duration 60
+          python3 cli_runner.py --target http://107.174.71.236/api/search --concurrency 10 --duration 30
