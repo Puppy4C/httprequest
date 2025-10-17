@@ -32,4 +32,4 @@ jobs:
       - name: Run CLI runner
         # the CLI runs for 120s; capture logs in workflow output
         run: |
-          python3 cli_runner.py --target http://107.174.71.236/api/search --concurrency 10 --duration 300
+          python3 cli_runner.py --target http://107.174.71.236/api/search --concurrency 5 --duration 300 --rps 5
